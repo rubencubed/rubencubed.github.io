@@ -31,6 +31,10 @@ class Morsel {
         this.xPos += Math.cos(this.direction) * this.speed
         this.yPos += Math.sin(this.direction) * this.speed
     }
+
+    setDirection(newDirection) {
+        this.direction = newDirection
+    }
 }
 
 class UserBacterium {
@@ -42,7 +46,6 @@ class UserBacterium {
     }
 
     revealNearby(revealType) {
-
         if (this.energy > 0) {
             if (revealType == 'friendlyBacteria') {
                 this.energy = this.energy - 2
@@ -118,67 +121,19 @@ function setup() {
     borderWidth = width - 2 * borderStart
     borderHeight = height - 2 * borderStart
 
-    userBacterium = new UserBacterium(100, false)
+    userBacterium = new UserBacterium(100, true, true, true)
 
     // friendly bacteria initial generation
     for (let i = 0; i < 1; i++) {
-        let xPos = getRandomNumberWithCut(
-            circleDiameter,
-            width / 2 - circleDiameter,
-            width / 2 + circleDiameter,
-            width - circleDiameter
-        )
-        let yPos = getRandomNumberWithCut(
-            circleDiameter,
-            height / 2 - circleDiameter,
-            height / 2 + circleDiameter,
-            height - circleDiameter
-        )
-        let speed = Math.floor(Math.random() * 5 + 1) / 10
-        let direction = Math.random() * Math.PI * 2
-
-        friendlyBacteria.push(
-            new Bacterium(xPos, yPos, speed, direction, 'friendly')
-        )
+        friendlyBacteria.push(randomBacterium('friendly'))
     }
     // hostile bacteria initial generation
     for (let i = 0; i < 2; i++) {
-        let xPos = getRandomNumberWithCut(
-            circleDiameter,
-            width / 2 - circleDiameter,
-            width / 2 + circleDiameter,
-            width - circleDiameter
-        )
-        let yPos = getRandomNumberWithCut(
-            circleDiameter,
-            height / 2 - circleDiameter,
-            height / 2 + circleDiameter,
-            height - circleDiameter
-        )
-        let speed = Math.floor(Math.random() * 5 + 1) / 5
-        let direction = Math.random() * Math.PI * 2
-
-        hostileBacteria.push(new Bacterium(xPos, yPos, speed, direction, 'hostile'))
+        hostileBacteria.push(randomBacterium('hostile'))
     }
     // morsel initial generation
     for (let i = 0; i < 4; i++) {
-        let xPos = getRandomNumberWithCut(
-            circleDiameter,
-            width / 2 - circleDiameter,
-            width / 2 + circleDiameter,
-            width - circleDiameter
-        )
-        let yPos = getRandomNumberWithCut(
-            circleDiameter,
-            height / 2 - circleDiameter,
-            height / 2 + circleDiameter,
-            height - circleDiameter
-        )
-        let amount = Math.floor(Math.random() * 10)
-        let speed = Math.floor(Math.random() * 5 + 1) / 10
-        let direction = Math.random() * Math.PI * 2
-
-        morsels.push(new Morsel(xPos, yPos, amount, speed, direction))
+        morsels.push(randomMorsel())
     }
 
     createCanvas(width, height)
@@ -204,7 +159,6 @@ function draw() {
     rect(borderStart, borderStart, borderWidth, borderHeight)
 
     //control panel (outside game)
-
     // energy
     textAlign(CENTER, CENTER)
     text(userBacterium.energy + ' energy', width - 50, 25)
@@ -305,162 +259,85 @@ function handleMovement() {
     // replace out of bounds
     for (let i = 0; i < friendlyBacteria.length; i++) {
         friendlyBacteria[i].updatePosition()
+
+        // flip direction on y-axis
         if (
             friendlyBacteria[i].xPos < borderStart ||
+            friendlyBacteria[i].xPos > width - borderStart
+        ) {
+            friendlyBacteria[i].setDirection(Math.PI - friendlyBacteria[i].direction)
+        }
+        if (
             friendlyBacteria[i].yPos < borderStart ||
-            friendlyBacteria[i].xPos > width - borderStart ||
             friendlyBacteria[i].yPos > height - borderStart
         ) {
-            let xPos = getRandomNumberWithCut(
-                circleDiameter,
-                width / 2 - circleDiameter,
-                width / 2 + circleDiameter,
-                width - circleDiameter
-            )
-            let yPos = getRandomNumberWithCut(
-                circleDiameter,
-                height / 2 - circleDiameter,
-                height / 2 + circleDiameter,
-                height - circleDiameter
-            )
-            let speed = Math.floor(Math.random() * 5 + 1) / 5
-            let direction = Math.random() * Math.PI * 2
-
-            let newFriendlyBacteria = new Bacterium(
-                xPos,
-                yPos,
-                speed,
-                direction,
-                'friendly'
-            )
-            friendlyBacteria[i] = newFriendlyBacteria
+            friendlyBacteria[i].setDirection(-1 * friendlyBacteria[i].direction)
         }
     }
     for (let i = 0; i < hostileBacteria.length; i++) {
         hostileBacteria[i].updatePosition()
+
         if (
             hostileBacteria[i].xPos < borderStart ||
+            hostileBacteria[i].xPos > width - borderStart
+        ) {
+            hostileBacteria[i].setDirection(Math.PI - hostileBacteria[i].direction)
+        }
+        if (
             hostileBacteria[i].yPos < borderStart ||
-            hostileBacteria[i].xPos > width - borderStart ||
             hostileBacteria[i].yPos > height - borderStart
         ) {
-            let xPos = getRandomNumberWithCut(
-                circleDiameter,
-                width / 2 - circleDiameter,
-                width / 2 + circleDiameter,
-                width - circleDiameter
-            )
-            let yPos = getRandomNumberWithCut(
-                circleDiameter,
-                height / 2 - circleDiameter,
-                height / 2 + circleDiameter,
-                height - circleDiameter
-            )
-            let speed = Math.floor(Math.random() * 5 + 1) / 5
-            let direction = Math.random() * Math.PI * 2
-
-            let newHostileBacteria = new Bacterium(
-                xPos,
-                yPos,
-                speed,
-                direction,
-                'hostile'
-            )
-            hostileBacteria[i] = newHostileBacteria
+            hostileBacteria[i].setDirection(-1 * hostileBacteria[i].direction)
         }
     }
     for (let i = 0; i < morsels.length; i++) {
         morsels[i].updatePosition()
+
         if (
             morsels[i].xPos < borderStart ||
+            morsels[i].xPos > width - borderStart
+        ) {
+            morsels[i].setDirection(Math.PI - morsels[i].direction)
+        }
+        if (
             morsels[i].yPos < borderStart ||
-            morsels[i].xPos > width - borderStart ||
             morsels[i].yPos > height - borderStart
         ) {
-            let xPos = getRandomNumberWithCut(
-                circleDiameter,
-                width / 2 - circleDiameter,
-                width / 2 + circleDiameter,
-                width - circleDiameter
-            )
-            let yPos = getRandomNumberWithCut(
-                circleDiameter,
-                height / 2 - circleDiameter,
-                height / 2 + circleDiameter,
-                height - circleDiameter
-            )
-            let amount = Math.floor(Math.random() * 10)
-            let speed = Math.floor(Math.random() * 5 + 1) / 10
-            let direction = Math.random() * Math.PI * 2
-            let newMorsel = new Morsel(xPos, yPos, amount, speed, direction)
-            morsels[i] = newMorsel
+            morsels[i].setDirection(-1 * morsels[i].direction)
         }
     }
 }
 
 function gameLoop() {
     // add new hostile bacterium
-    let xPos = getRandomNumberWithCut(
-        circleDiameter,
-        width / 2 - circleDiameter,
-        width / 2 + circleDiameter,
-        width - circleDiameter
-    )
-    let yPos = getRandomNumberWithCut(
-        circleDiameter,
-        height / 2 - circleDiameter,
-        height / 2 + circleDiameter,
-        height - circleDiameter
-    )
-    let speed = Math.floor(Math.random() * 5 + 1) / 5
-    let direction = Math.random() * Math.PI * 2
-
-    hostileBacteria.push(new Bacterium(xPos, yPos, speed, direction, 'hostile'))
+    hostileBacteria.push(randomBacterium('hostile'))
 
     // add two new morsels
-    for (let i = 0; i < 2; i++) {
-        let xPos = getRandomNumberWithCut(
-            circleDiameter,
-            width / 2 - circleDiameter,
-            width / 2 + circleDiameter,
-            width - circleDiameter
-        )
-        let yPos = getRandomNumberWithCut(
-            circleDiameter,
-            height / 2 - circleDiameter,
-            height / 2 + circleDiameter,
-            height - circleDiameter
-        )
-        let amount = Math.floor(Math.random() * 10)
-        let speed = Math.floor(Math.random() * 5 + 1) / 10
-        let direction = Math.random() * Math.PI * 2
-
-        morsels.push(new Morsel(xPos, yPos, amount, speed, direction))
-    }
+    morsels.push(randomMorsel())
+    morsels.push(randomMorsel())
 
     // deduct user food for existing
-    if (!gameOver) {
-        userBacterium.hunger()
-        if (userBacterium.energy <= 0) {
-            gameOver = true
-        }
-    }
-
+    // if (!gameOver) {
+    //     userBacterium.hunger()
+    //     if (userBacterium.energy <= 0) {
+    //         gameOver = true
+    //     }
+    // }
 }
 
 //utility functions
 function randomBacterium(friendStatus) {
     let xPos = getRandomNumberWithCut(
-        circleDiameter,
+        borderStart + 1,
         width / 2 - circleDiameter,
         width / 2 + circleDiameter,
-        width - circleDiameter
+        width - borderStart - 1
     )
     let yPos = getRandomNumberWithCut(
-        circleDiameter,
+        borderStart + 1,
         height / 2 - circleDiameter,
         height / 2 + circleDiameter,
-        height - circleDiameter
+        height - borderStart - 1
     )
     let speed = Math.floor(Math.random() * 5 + 1) / 5
     let direction = Math.random() * Math.PI * 2
@@ -470,16 +347,16 @@ function randomBacterium(friendStatus) {
 
 function randomMorsel() {
     let xPos = getRandomNumberWithCut(
-        circleDiameter,
+        borderStart + 1,
         width / 2 - circleDiameter,
         width / 2 + circleDiameter,
-        width - circleDiameter
+        width - borderStart - 1
     )
     let yPos = getRandomNumberWithCut(
-        circleDiameter,
+        borderStart + 1,
         height / 2 - circleDiameter,
         height / 2 + circleDiameter,
-        height - circleDiameter
+        height - borderStart - 1
     )
     let amount = Math.floor(Math.random() * 10)
     let speed = Math.floor(Math.random() * 5 + 1) / 10
