@@ -38,8 +38,9 @@ class Morsel {
 }
 
 class UserBacterium {
-    constructor(energy, nearbyFriends, nearbyEnemies, nearbyMorsels) {
+    constructor(energy, createFoodEnzyme, nearbyFriends, nearbyEnemies, nearbyMorsels) {
         this.energy = energy
+        this.createFoodEnzyme = this.createFoodEnzyme
         this.nearbyFriends = nearbyFriends
         this.nearbyEnemies = nearbyEnemies
         this.nearbyMorsels = nearbyMorsels
@@ -82,6 +83,15 @@ class UserBacterium {
         }
     }
 
+    turnOnFoodEnzyme() {
+        if (this.energy > 0) {
+            this.createFoodEnzyme = true
+            setTimeout(() => {
+                this.createFoodEnzyme = false
+            }, 3000)
+        }
+    }
+
     hunger() {
         this.energy = this.energy - 1
     }
@@ -90,11 +100,36 @@ class UserBacterium {
         friendlyBacteria.push(randomBacterium('friendly'))
     }
 
-    createEnzyme(morsels) {
-        for (const morsel of morsels) {
-            if (this.energy > 0) {
-                this.energy = this.energy - 5
+    eatFood(morsels, friendlyBacteria, hostileBacteria, radiusOfInfluence, xCenter, yCenter) {
+        if (this.energy > 0) {
+            morselLoop: for (let i = 0; i < morsels.length; i++) {
+                //if within distance of main bacterium
+                if (
+                    Math.hypot(morsels[1].xPos - xCenter, morsels[1].yPos - yCenter) <=
+                    radiusOfInfluence
+                ) {
+                    this.energy = this.energy + morsels[1].amount
+                    morsels.splice(i, 1)
+                    i--
+                    continue morselLoop
+                } else {
+                    for (let j = 0; j < friendlyBacteria.length; j++) {
+                        if (
+                            Math.hypot(
+                                morsels[1].xPos - friendlyBacteria[i].xPos,
+                                morsels[1].yPos - friendlyBacteria[i].yPos
+                            ) <= radiusOfInfluence
+                        ) {
+                            this.energy = this.energy + morsels[1].amount
+                            morsels.splice(i, 1)
+                            i--
+                            continue morselLoop
+                        }
+                    }
+                }
             }
+
+            this.energy = this.energy - 5
         }
     }
 }
@@ -121,7 +156,7 @@ function setup() {
     borderWidth = width - 2 * borderStart
     borderHeight = height - 2 * borderStart
 
-    userBacterium = new UserBacterium(100, true, true, true)
+    userBacterium = new UserBacterium(100, false, true, true, true)
 
     // friendly bacteria initial generation
     for (let i = 0; i < 1; i++) {
@@ -150,7 +185,7 @@ function draw() {
         }
     }
 
-    frameRate(24)
+    frameRate(40)
     background(200)
 
     //outside border of game
@@ -177,6 +212,11 @@ function draw() {
     rect(width - 500, 15, 100, 30)
     fill('white')
     text('Reveal Morsels', width - 450, 30)
+    // Eat Food
+    fill('yellow')
+    rect(width - 650, 15, 100, 30)
+    fill('black')
+    text('Eat Food', width - 600, 30)
 
     // only show if user spends food to reveal
     if (userBacterium.nearbyFriends) {
@@ -250,6 +290,16 @@ function mousePressed() {
     ) {
         userBacterium.revealNearby('morsels')
     }
+    // create enzynme to eat morsels
+    if (
+        mouseX > width - 650 &&
+        mouseX < width - 550 &&
+        mouseY > 15 &&
+        mouseY < 45 &&
+        !userBacterium.createFoodEnzyme
+    ) {
+        userBacterium.turnOnFoodEnzyme()
+    }
     // if (false) {
     //     userBacterium.createEnzyme([])
     // }
@@ -305,6 +355,11 @@ function handleMovement() {
         ) {
             morsels[i].setDirection(-1 * morsels[i].direction)
         }
+    }
+
+    // handle if movement overlaps with enzymes are on
+    if (userBacterium.createFoodEnzyme) {
+        userBacterium.eatFood(morsels, friendlyBacteria, hostileBacteria, circleDiameter, width / 2, height / 2)
     }
 }
 

@@ -1,0 +1,38 @@
+html {
+    background-color: #001122;
+    color: white;
+}
+
+.card-list {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    list-style: none;
+    align-items: center;
+    justify-content: center;
+    padding-left: 0;
+}
+
+.card-list:last-child {
+    align-self: flex-start;
+}
+
+.card-link {
+    text-decoration: none;
+}
+
+.card {
+    border: 1px solid black;
+    margin-inline: .75em;
+    margin-block: .25em;
+    border-radius: .25em;
+    padding: 1em;
+    width: 20em;
+    height: 10em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0px 0px 12px 6px rgba(255, 255, 255, 0.8);
+    -webkit-box-shadow: 0px 0px 12px 6px rgba(255, 255, 255, 0.8);
+    -moz-box-shadow: 0px 0px 12px 6px rgba(255, 255, 255, 0.8);
+}
