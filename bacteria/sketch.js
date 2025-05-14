@@ -146,7 +146,7 @@ let borderStart = 75
 let borderWidth
 let borderHeight
 
-const gameTick = 10
+const gameTick = 30
 let lastTime
 let gameOver = false
 
