@@ -1,13 +1,13 @@
 class Bacterium {
-    constructor(xPos, yPos, affiliation) {
+    constructor(xPos, yPos, affiliation, size) {
         this.xPos = xPos
         this.yPos = yPos
         // affiliation is 'hostile' or 'friendly'
         this.affiliation = affiliation
 
-        this.size = Math.random() * 50
+        this.size = Math.random() * 50 + 25
         // should speed be dependent on size?
-        this.speed = Math.floor(Math.random() * 5 + 1) / 5
+        this.speed = size ? size : Math.floor(Math.random() * 5 + 1) / 5
         this.direction = Math.random() * Math.PI * 2
         this.directionChangeProbability = 0
         this.radiusOfEffect = Math.random() * 50 + 50
@@ -61,6 +61,11 @@ class Bacterium {
     }
 
     split(otherBacteria) {
+        this.xPos = this.xPos - (this.size / 2)
+        this.yPos = this.yPos - (this.size / 2)
+        this.size = this.size / 2
+
+        otherBacteria.push(new Bacterium())
         return
     }
 
@@ -90,9 +95,18 @@ class Bacterium {
         this.yPos += Math.sin(this.direction) * this.speed
     }
 
+    updateSize(newSize) {
+        this.size = newSize
+    }
+
     setDirection(newDirection) {
         this.direction = newDirection
         this.directionChangeProbability = 0
+    }
+
+    setPosition(newX, newY) {
+        this.xPos = newX
+        this.yPos = newY
     }
 }
 
@@ -127,116 +141,6 @@ class Morsel {
     }
 }
 
-class UserBacterium {
-    constructor(
-        energy,
-        createFoodEnzyme,
-        nearbyFriends,
-        nearbyEnemies,
-        nearbyMorsels
-    ) {
-        this.energy = energy
-        this.createFoodEnzyme = this.createFoodEnzyme
-        this.nearbyFriends = nearbyFriends
-        this.nearbyEnemies = nearbyEnemies
-        this.nearbyMorsels = nearbyMorsels
-    }
-
-    revealNearby(revealType) {
-        if (this.energy > 0) {
-            if (revealType == 'friendlyBacteria') {
-                this.energy = this.energy - 2
-                this.nearbyFriends = true
-
-                setTimeout(() => {
-                    this.hideNearby('friendlyBacteria')
-                }, 3000)
-            } else if (revealType == 'hostileBacteria') {
-                this.energy = this.energy - 4
-                this.nearbyEnemies = true
-
-                setTimeout(() => {
-                    this.hideNearby('hostileBacteria')
-                }, 3000)
-            } else if (revealType == 'morsels') {
-                this.energy = this.energy - 1
-                this.nearbyMorsels = true
-
-                setTimeout(() => {
-                    this.hideNearby('morsels')
-                }, 2000)
-            }
-        }
-    }
-
-    hideNearby(hideType) {
-        if (hideType == 'friendlyBacteria') {
-            this.nearbyFriends = false
-        } else if (hideType == 'hostileBacteria') {
-            this.nearbyEnemies = false
-        } else if (hideType == 'morsels') {
-            this.nearbyMorsels = false
-        }
-    }
-
-    turnOnFoodEnzyme() {
-        if (this.energy > 0) {
-            this.createFoodEnzyme = true
-            setTimeout(() => {
-                this.createFoodEnzyme = false
-            }, 3000)
-        }
-    }
-
-    hunger() {
-        this.energy = this.energy - 1
-    }
-
-    createFriend(friendlyBacteria) {
-        friendlyBacteria.push(randomBacterium('friendly'))
-    }
-
-    eatFood(
-        morsels,
-        friendlyBacteria,
-        hostileBacteria,
-        radiusOfInfluence,
-        xCenter,
-        yCenter
-    ) {
-        if (this.energy > 0) {
-            morselLoop: for (let i = 0; i < morsels.length; i++) {
-                //if within distance of main bacterium
-                if (
-                    Math.hypot(morsels[1].xPos - xCenter, morsels[1].yPos - yCenter) <=
-                    radiusOfInfluence
-                ) {
-                    this.energy = this.energy + morsels[1].amount
-                    morsels.splice(i, 1)
-                    i--
-                    continue morselLoop
-                } else {
-                    for (let j = 0; j < friendlyBacteria.length; j++) {
-                        if (
-                            Math.hypot(
-                                morsels[1].xPos - friendlyBacteria[i].xPos,
-                                morsels[1].yPos - friendlyBacteria[i].yPos
-                            ) <= radiusOfInfluence
-                        ) {
-                            this.energy = this.energy + morsels[1].amount
-                            morsels.splice(i, 1)
-                            i--
-                            continue morselLoop
-                        }
-                    }
-                }
-            }
-
-            this.energy = this.energy - 5
-        }
-    }
-}
-
 let userBacterium
 let friendlyBacteria = []
 let hostileBacteria = []
@@ -249,7 +153,7 @@ let borderStart = 75
 let borderWidth
 let borderHeight
 
-const gameTick = 30
+const gameTick = 1
 let lastTime
 let gameOver = false
 
@@ -258,21 +162,6 @@ function setup() {
     height = Math.min(windowHeight, 600)
     borderWidth = width - 2 * borderStart
     borderHeight = height - 2 * borderStart
-
-    userBacterium = new UserBacterium(100, false, true, true, true)
-
-    // friendly bacteria initial generation
-    for (let i = 0; i < 1; i++) {
-        friendlyBacteria.push(randomBacterium('friendly'))
-    }
-    // hostile bacteria initial generation
-    for (let i = 0; i < 2; i++) {
-        hostileBacteria.push(randomBacterium('hostile'))
-    }
-    // morsel initial generation
-    for (let i = 0; i < 4; i++) {
-        morsels.push(randomMorsel())
-    }
 
     createCanvas(width, height)
     colorMode(HSB, 255)
@@ -297,115 +186,81 @@ function draw() {
     rect(borderStart, borderStart, borderWidth, borderHeight)
 
     //control panel (outside game)
-    // energy
     textAlign(CENTER, CENTER)
-    text(userBacterium.energy + ' energy', width - 50, 25)
-    // Reveal Friendly Bacteria
+    // Add Friendly Bacteria
     fill('blue')
     rect(width - 200, 15, 100, 30)
     fill('white')
-    text('Reveal Friends', width - 150, 30)
-    // Reveal Hostile bacteria
+    text('Add Friend', width - 150, 30)
+    // Add Hostile bacteria
     fill('red')
     rect(width - 350, 15, 100, 30)
     fill('white')
-    text('Reveal Enemies', width - 300, 30)
-    // Reveal Morsels
+    text('Add Enemy', width - 300, 30)
+    // Add Morsels
     fill('black')
     rect(width - 500, 15, 100, 30)
     fill('white')
-    text('Reveal Morsels', width - 450, 30)
-    // Eat Food
-    fill('yellow')
-    rect(width - 650, 15, 100, 30)
-    fill('black')
-    text('Eat Food', width - 600, 30)
+    text('Add Morsel', width - 450, 30)
 
     // only show if user spends food to reveal
-    if (userBacterium.nearbyFriends) {
-        friendlyBacteria.map((friendlyBacterium) => {
-            fill('blue')
-            stroke(0)
-            return circle(
-                friendlyBacterium.xPos,
-                friendlyBacterium.yPos,
-                circleDiameter
-            )
-        })
-    }
-    if (userBacterium.nearbyEnemies) {
-        hostileBacteria.map((hostileBacterium) => {
-            fill('red')
-            stroke(0)
-            return circle(
-                hostileBacterium.xPos,
-                hostileBacterium.yPos,
-                circleDiameter
-            )
-        })
-    }
-    if (userBacterium.nearbyMorsels) {
-        morsels.map((morsel) => {
-            fill('black')
-            noStroke()
-            return circle(morsel.xPos, morsel.yPos, 2 * morsel.amount)
-        })
-    }
+    friendlyBacteria.map((friendlyBacterium) => {
+        fill('blue')
+        stroke(0)
+        return circle(
+            friendlyBacterium.xPos,
+            friendlyBacterium.yPos,
+            friendlyBacterium.size
+        )
+    })
 
-    //userBacterium
-    fill('white')
-    noStroke()
-    circle(width / 2, height / 2, circleDiameter)
-    fill('black')
-    text('You', width / 2, height / 2)
+    hostileBacteria.map((hostileBacterium) => {
+        fill('red')
+        stroke(0)
+        return circle(
+            hostileBacterium.xPos,
+            hostileBacterium.yPos,
+            hostileBacterium.size
+        )
+    })
+
+    morsels.map((morsel) => {
+        fill('black')
+        noStroke()
+        return circle(morsel.xPos, morsel.yPos, 2 * morsel.amount)
+    })
 
     handleMovement()
 }
 
 function mousePressed() {
-    // reveal nearby friends
+    // Add friend
     if (
         mouseX > width - 200 &&
         mouseX < width - 100 &&
         mouseY > 15 &&
-        mouseY < 45 &&
-        !userBacterium.nearbyFriends
+        mouseY < 45
     ) {
-        userBacterium.revealNearby('friendlyBacteria')
+        friendlyBacteria.push(randomBacterium('friendly'))
     }
-    // reveal nearby enemies
+    // Add enemy
     if (
         mouseX > width - 350 &&
         mouseX < width - 250 &&
         mouseY > 15 &&
-        mouseY < 45 &&
-        !userBacterium.nearbyEnemies
+        mouseY < 45
     ) {
-        userBacterium.revealNearby('hostileBacteria')
+        hostileBacteria.push(randomBacterium('hostile'))
     }
-    // reveal nearby morsels
+    // Add morsel
     if (
         mouseX > width - 500 &&
         mouseX < width - 400 &&
         mouseY > 15 &&
-        mouseY < 45 &&
-        !userBacterium.nearbyMorsels
+        mouseY < 45
     ) {
-        userBacterium.revealNearby('morsels')
+        morsels.push(randomMorsel())
     }
-    // create enzynme to eat morsels
-    if (
-        mouseX > width - 650 &&
-        mouseX < width - 550 &&
-        mouseY > 15 &&
-        mouseY < 45 &&
-        !userBacterium.createFoodEnzyme
-    ) {
-        userBacterium.turnOnFoodEnzyme()
-    }
-    // if (false) {
-    //     userBacterium.createEnzyme([])
-    // }
 }
 
 function handleMovement() {
@@ -413,20 +268,36 @@ function handleMovement() {
     for (let i = 0; i < friendlyBacteria.length; i++) {
         friendlyBacteria[i].updatePosition()
 
-        // flip direction on y-axis
+        // flip direction on x-axis
         if (
-            friendlyBacteria[i].xPos < borderStart ||
-            friendlyBacteria[i].xPos > width - borderStart
+            friendlyBacteria[i].xPos <= borderStart ||
+            friendlyBacteria[i].xPos >= width - borderStart
         ) {
             friendlyBacteria[i].setDirection(Math.PI - friendlyBacteria[i].direction)
+
+            //in case it has gone way past the border
+            if (friendlyBacteria[i].xPos <= borderStart) {
+                friendlyBacteria[i].setPosition(borderStart + 1, friendlyBacteria[i].yPos)
+            } else {
+                friendlyBacteria[i].setPosition(width - borderStart - 1, friendlyBacteria[i].yPos)
+            }
         }
+        // flip direction on y-axis
         if (
-            friendlyBacteria[i].yPos < borderStart ||
-            friendlyBacteria[i].yPos > height - borderStart
+            friendlyBacteria[i].yPos <= borderStart ||
+            friendlyBacteria[i].yPos >= height - borderStart
         ) {
             friendlyBacteria[i].setDirection(-1 * friendlyBacteria[i].direction)
+
+            //in case it has gone way past the border
+            if (friendlyBacteria[i].yPos <= borderStart) {
+                friendlyBacteria[i].setPosition(friendlyBacteria[i].xPos, borderStart + 1)
+            } else {
+                friendlyBacteria[i].setPosition(friendlyBacteria[i].xPos, height - borderStart - 1)
+            }
         }
     }
+
     for (let i = 0; i < hostileBacteria.length; i++) {
         hostileBacteria[i].updatePosition()
 
@@ -435,12 +306,24 @@ function handleMovement() {
             hostileBacteria[i].xPos > width - borderStart
         ) {
             hostileBacteria[i].setDirection(Math.PI - hostileBacteria[i].direction)
+
+            if (hostileBacteria[i].xPos <= borderStart) {
+                hostileBacteria[i].setPosition(borderStart + 1, hostileBacteria[i].yPos)
+            } else {
+                hostileBacteria[i].setPosition(width - borderStart - 1, hostileBacteria[i].yPos)
+            }
         }
         if (
             hostileBacteria[i].yPos < borderStart ||
             hostileBacteria[i].yPos > height - borderStart
         ) {
             hostileBacteria[i].setDirection(-1 * hostileBacteria[i].direction)
+
+            if (hostileBacteria[i].yPos <= borderStart) {
+                hostileBacteria[i].setPosition(hostileBacteria[i].xPos, borderStart + 1)
+            } else {
+                hostileBacteria[i].setPosition(hostileBacteria[i].xPos, height - borderStart - 1)
+            }
         }
     }
     for (let i = 0; i < morsels.length; i++) {
@@ -459,84 +342,43 @@ function handleMovement() {
             morsels[i].setDirection(-1 * morsels[i].direction)
         }
     }
-
-    // handle if movement overlaps with enzymes are on
-    if (userBacterium.createFoodEnzyme) {
-        userBacterium.eatFood(
-            morsels,
-            friendlyBacteria,
-            hostileBacteria,
-            circleDiameter,
-            width / 2,
-            height / 2
-        )
-    }
 }
 
 function gameLoop() {
-    // add new hostile bacterium
-    hostileBacteria.push(randomBacterium('hostile'))
-
-    // add two new morsels
-    morsels.push(randomMorsel())
-    morsels.push(randomMorsel())
-
     // deduct user food for existing
-    // if (!gameOver) {
-    //     userBacterium.hunger()
-    //     if (userBacterium.energy <= 0) {
-    //         gameOver = true
-    //     }
-    // }
+    for (let i = 0; i < friendlyBacteria.length; i++) {
+        if (friendlyBacteria[i].destroyed || friendlyBacteria[i].size <= 10) {
+            friendlyBacteria.splice(i, 1)
+            i--
+        } else {
+            friendlyBacteria[i].updateSize(friendlyBacteria[i].size - 0.3)
+        }
+    }
+    // do the same for hostile bacteria
+    for (let i = 0; i < hostileBacteria.length; i++) {
+        if (hostileBacteria[i].destroyed || hostileBacteria[i].size <= 10) {
+            hostileBacteria.splice(i, 1)
+            i--
+        } else {
+            hostileBacteria[i].updateSize(hostileBacteria[i].size - 0.3)
+        }
+    }
 }
 
 //utility functions
 function randomBacterium(friendStatus) {
-    let xPos = getRandomNumberWithCut(
-        borderStart + 1,
-        width / 2 - circleDiameter,
-        width / 2 + circleDiameter,
-        width - borderStart - 1
-    )
-    let yPos = getRandomNumberWithCut(
-        borderStart + 1,
-        height / 2 - circleDiameter,
-        height / 2 + circleDiameter,
-        height - borderStart - 1
-    )
-    let speed = Math.floor(Math.random() * 5 + 1) / 5
-    let direction = Math.random() * Math.PI * 2
+    let xPos = Math.floor(Math.random() * (borderWidth - borderStart)) + borderStart
+    let yPos = Math.floor(Math.random() * (borderHeight - borderStart)) + borderStart
 
-    return new Bacterium(xPos, yPos, speed, direction, friendStatus)
+    return new Bacterium(xPos, yPos, friendStatus)
 }
 
 function randomMorsel() {
-    let xPos = getRandomNumberWithCut(
-        borderStart + 1,
-        width / 2 - circleDiameter,
-        width / 2 + circleDiameter,
-        width - borderStart - 1
-    )
-    let yPos = getRandomNumberWithCut(
-        borderStart + 1,
-        height / 2 - circleDiameter,
-        height / 2 + circleDiameter,
-        height - borderStart - 1
-    )
+    let xPos = Math.floor(Math.random() * (borderWidth - borderStart)) + borderStart
+    let yPos = Math.floor(Math.random() * (borderHeight - borderStart)) + borderStart
     let amount = Math.floor(Math.random() * 10)
     let speed = Math.floor(Math.random() * 5 + 1) / 10
     let direction = Math.random() * Math.PI * 2
 
     return new Morsel(xPos, yPos, amount, speed, direction)
-}
-
-function getRandomNumberWithCut(min1, max1, min2, max2) {
-    const useFirstRange =
-        Math.random() < (max1 - min1 + 1) / (max1 - min1 + 1 + (max2 - min2 + 1))
-
-    if (useFirstRange) {
-        return Math.floor(Math.random() * (max1 - min1 + 1)) + min1
-    } else {
-        return Math.floor(Math.random() * (max2 - min2 + 1)) + min2
-    }
 }
