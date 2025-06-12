@@ -251,7 +251,7 @@ function draw() {
 
         c.setAlpha(255)
         fill(c)
-        noStroke()
+        stroke(0)
         circle(
             bacterium.xPos,
             bacterium.yPos,
