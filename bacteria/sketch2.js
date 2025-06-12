@@ -11,7 +11,6 @@ class Bacterium {
         this.speed = Math.floor(Math.random() * 3 + 2) / 10
         this.direction = Math.random() * Math.PI * 2
         this.directionChangeProbability = 0
-        this.radiusOfEffect = Math.random() * 50 + 50
 
         this.destroyed = false
         this.isGlowing = false
@@ -40,7 +39,7 @@ class Bacterium {
                             Math.hypot(
                                 this.xPos - otherBacterium.xPos,
                                 this.yPos - otherBacterium.yPos
-                            ) <= this.radiusOfEffect
+                            ) <= this.glowSize / 2
                         ) {
                             if (otherBacterium.affiliation == this.affiliation) {
                                 nearbyFriends++
@@ -55,14 +54,14 @@ class Bacterium {
                             Math.hypot(
                                 this.xPos - morsel.xPos,
                                 this.yPos - morsel.yPos
-                            ) <= this.radiusOfEffect
+                            ) <= this.glowSize / 2
                         ) {
                             nearbyFood += morsel.amount
                             nearbyMorsels.push(morsel)
                         }
                     }
 
-                    if (nearbyEnemies >= nearbyFriends) {
+                    if (nearbyEnemies >= nearbyFriends / 2 && Math.random() < 0.7) {
                         this.releasePoison(nearbyBacteria, this.affiliation)
                     } else if (nearbyFriends >= nearbyEnemies && nearbyFood >= this.size * 0.1) {
                         this.releaseEnzyme(nearbyBacteria, nearbyMorsels, nearbyFood)
@@ -71,7 +70,7 @@ class Bacterium {
                     this.hasReleasedEnzyme = true
                 }
 
-                const t = currentTime / 1000 // seconds
+                const t = currentTime / 1000
                 const peak = Bacterium.glowApexTime
                 this.glowSize = this.maxGlowSize * (1 - Math.pow((t - peak) / peak, 2))
             }
@@ -92,14 +91,21 @@ class Bacterium {
         otherBacteria.push(new Bacterium())
         return
     }
-
+    // area + new / area gives factor, multiply diameter by square of factor
     releaseEnzyme(nearbyBacteria, nearbyMorsels, nearbyFoodAmount) {
-        this.size = this.size * 0.9
+        //this one needs to predict not the diameter reduction but the area lost
+        this.size = this.size * 0.97
+        const thisBacteriumArea = Math.PI * Math.pow(this.size, 2) / 4
+        const thisAreaFactor = (thisBacteriumArea + Math.floor((nearbyFoodAmount * 10) / (nearbyBacteria.length + 1))) / thisBacteriumArea
+        this.size = this.size * Math.sqrt(thisAreaFactor)
         for (const nearbyMorsel of nearbyMorsels) {
             nearbyMorsel.dissolve()
         }
         for (const nearbyBacterium of nearbyBacteria) {
-            nearbyBacterium.size += Math.floor(nearbyFoodAmount / nearbyBacteria.length)
+            const bacteriumArea = Math.PI * Math.pow(nearbyBacterium.size, 2) / 4
+            const areaFactor = (bacteriumArea + Math.floor((nearbyFoodAmount * 10) / (nearbyBacteria.length + 1))) / bacteriumArea
+            nearbyBacterium.size = nearbyBacterium.size * Math.sqrt(areaFactor)
+            // nearbyBacterium.size += Math.floor(nearbyFoodAmount / nearbyBacteria.length)
         }
     }
     // opposite of current bacterium's affiliation
@@ -262,7 +268,7 @@ function draw() {
     morsels.map((morsel) => {
         fill('black')
         noStroke()
-        circle(morsel.xPos, morsel.yPos, 2 * morsel.amount)
+        circle(morsel.xPos, morsel.yPos, morsel.amount)
     })
 
     handleMovement()
@@ -359,6 +365,21 @@ function gameLoop() {
     // deduct user food for existing
     for (let i = 0; i < bacteria.length; i++) {
         if (bacteria[i].destroyed || bacteria[i].size <= 10) {
+            // turn bacterium into morsel(s)
+            let amountOfMorselToBeMade = Math.PI * Math.pow(bacteria[i].size, 2) / 4
+            console.log(amountOfMorselToBeMade)
+            while (amountOfMorselToBeMade > 0) {
+                const amount = Math.floor(Math.random() * 5) + 6
+                const speed = Math.floor(Math.random() * 5 + 1) / 10
+                const direction = Math.random() * Math.PI * 2
+
+                morsels.push(new Morsel(bacteria[i].xPos, bacteria[i].yPos, amount, speed, direction))
+
+                amountOfMorselToBeMade -= Math.PI * Math.pow(amount, 2) / 4
+                console.log('amount subtracted: ' + amount)
+                console.log('remaining amount: ' + amountOfMorselToBeMade)
+            }
+
             bacteria.splice(i, 1)
             i--
         } else {
@@ -379,18 +400,18 @@ function gameLoop() {
 
 //utility functions
 function randomBacterium(friendStatus) {
-    let xPos = Math.floor(Math.random() * (borderWidth - borderStart)) + borderStart
-    let yPos = Math.floor(Math.random() * (borderHeight - borderStart)) + borderStart
+    const xPos = Math.floor(Math.random() * (borderWidth - borderStart)) + borderStart
+    const yPos = Math.floor(Math.random() * (borderHeight - borderStart)) + borderStart
 
     return new Bacterium(xPos, yPos, friendStatus)
 }
 
 function randomMorsel() {
-    let xPos = Math.floor(Math.random() * (borderWidth - borderStart)) + borderStart
-    let yPos = Math.floor(Math.random() * (borderHeight - borderStart)) + borderStart
-    let amount = Math.floor(Math.random() * 10)
-    let speed = Math.floor(Math.random() * 5 + 1) / 10
-    let direction = Math.random() * Math.PI * 2
+    const xPos = Math.floor(Math.random() * (borderWidth - borderStart)) + borderStart
+    const yPos = Math.floor(Math.random() * (borderHeight - borderStart)) + borderStart
+    const amount = Math.floor(Math.random() * 5) + 6
+    const speed = Math.floor(Math.random() * 5 + 1) / 10
+    const direction = Math.random() * Math.PI * 2
 
     return new Morsel(xPos, yPos, amount, speed, direction)
 }
