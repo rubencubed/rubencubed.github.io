@@ -383,7 +383,7 @@ function gameLoop() {
             bacteria.splice(i, 1)
             i--
         } else {
-            bacteria[i].updateSize(bacteria[i].size - 0.3)
+            bacteria[i].updateSize(bacteria[i].size - 1)
             if (!bacteria.isGlowing && Math.random() < 0.05) {
                 bacteria[i].glow(bacteria, morsels)
             }
