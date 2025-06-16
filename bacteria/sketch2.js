@@ -396,6 +396,17 @@ function gameLoop() {
             i--
         }
     }
+
+    // add new bacterial and morsels in
+    for (let i = 0; i < 1; i++) {
+        if (Math.random() < 0.2) bacteria.push(randomBacterium('friendly'))
+    }
+    for (let i = 0; i < 1; i++) {
+        if (Math.random() < 0.2) bacteria.push(randomBacterium('hostile'))
+    }
+    for (let i = 0; i < 1; i++) {
+        morsels.push(randomMorsel())
+    }
 }
 
 //utility functions
