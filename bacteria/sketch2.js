@@ -61,7 +61,7 @@ class Bacterium {
                         }
                     }
 
-                    if (nearbyEnemies >= nearbyFriends / 2 && Math.random() < 0.7) {
+                    if (nearbyEnemies >= nearbyFriends * 2 || (nearbyEnemies >= nearbyFriends / 2 && Math.random() < 0.7)) {
                         this.releasePoison(nearbyBacteria, this.affiliation)
                     } else if (nearbyFriends >= nearbyEnemies && nearbyFood >= this.size * 0.1) {
                         this.releaseEnzyme(nearbyBacteria, nearbyMorsels, nearbyFood)
@@ -367,7 +367,7 @@ function gameLoop() {
         if (bacteria[i].destroyed || bacteria[i].size <= 10) {
             // turn bacterium into morsel(s)
             let amountOfMorselToBeMade = Math.PI * Math.pow(bacteria[i].size, 2) / 4
-            console.log(amountOfMorselToBeMade)
+
             while (amountOfMorselToBeMade > 0) {
                 const amount = Math.floor(Math.random() * 5) + 6
                 const speed = Math.floor(Math.random() * 5 + 1) / 10
@@ -383,7 +383,7 @@ function gameLoop() {
             bacteria.splice(i, 1)
             i--
         } else {
-            bacteria[i].updateSize(bacteria[i].size - 1)
+            bacteria[i].updateSize(bacteria[i].size - 0.5)
             if (!bacteria.isGlowing && Math.random() < 0.05) {
                 bacteria[i].glow(bacteria, morsels)
             }
