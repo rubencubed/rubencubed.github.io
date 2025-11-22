@@ -1,8 +1,8 @@
 class Platform {
     constructor(left, right, height) {
-        this.left = left,
-            this.right = right,
-            this.height = height
+        this.left = left
+        this.right = right
+        this.height = height
     }
 
     move(speed) {//note sure if this is valid
@@ -13,9 +13,9 @@ class Platform {
 
 class Jumper {
     constructor(xPosition, yPosition, diameter) {
-        this.xPosition = xPosition,
-            this.yPosition = yPosition,
-            this.diameter = diameter
+        this.xPosition = xPosition
+        this.yPosition = yPosition
+        this.diameter = diameter
     }
 
     moveLeft(distance) {
